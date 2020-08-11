@@ -1,0 +1,81 @@
+#-----> Chat bot for Mayo Clinic web pape <------
+pip install nltk
+pip install newspaper3k
+from newspaper import Article
+import random 
+import string
+import nltk
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np 
+import warnings
+warnings.filterwarnings('ignore')
+nltk.download('punkt', quiet=True)
+art = Article('https://www.mayoclinic.org/diseases-conditions/chronic-kidney-disease/symptoms-causes/syc-20354521')
+art.download()
+art.parse()
+art.nlp()
+cor = art.text
+print(cor)
+text = cor 
+sent_list = nltk.sent_tokenize(text)
+print(sent_list)
+
+def greeting(text):
+    text = text.lower()
+    bot_greet = ['hello', 'hey', 'hey', 'Hi!!']
+    user_greet = ['greeting','hello', 'hey', 'hey', 'Hi!!']
+    for word in text.split():
+        if word in user_greet:
+            return random.choice(bot_greet)
+
+def index_sort(list_var):
+    length = len(list_var)
+    index_list = list(range(0,length))
+    x=list_var
+    for i in range(length):
+        for j in range(length):
+            if x[index_list[i]]> x[index_list[j]]:
+                temp=index_list[i]
+                index_list[i]=index_list[j]
+                index_list[j]=temp
+    return index_list
+
+def response (user_input):
+    user_input = user_input.lower()
+    sent_list.append(user_input)
+    bot_response=" "
+    cm = CountVectorizer().fit_transform(sent_list)
+    similarity_scores = cosine_similarity(cm[-1], cm)
+    similarity_scores_list = similarity_scores.flatten()
+    index = index_sort(similarity_scores_list)
+    index = index[1:]
+    response_flag = 0
+    top2 = 0
+    for i in range(len(index)):
+        if similarity_scores_list[index[i]]>0.0:
+            bot_response = bot_response + sent_list[index[i]]
+            response_flag = 1
+            top2 = top2+1
+        if top2 >2:
+            break
+    if response_flag == 0:
+        bot_response = bot_response+" "+"No results found for you response"
+    sent_list.remove(user_input)
+    return bot_response
+
+print('Hello I am Bay-Max, your virtual assistant. How can I help today on chroinc kidney disease. To end the conversation enter : bye')
+
+exit = ['exit', 'bye', 'thank you for stopping by']
+
+while(True):
+    user_input = input()
+    if user_input.lower() in exit:
+        print('see you later')
+        break
+    else:
+        if greeting(user_input)!= None:
+            print(greeting(user_input))
+        else:
+            print(response(user_input))  
+            
